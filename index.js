@@ -1,6 +1,9 @@
 const fs = require("node:fs");
 const path = require("node:path");
+const http = require("node:http");
 const nunjucks = require("nunjucks");
+const mime = require("mime").default;
+const frontMatter = require("front-matter");
 
 class pbj
 {
@@ -8,6 +11,7 @@ class pbj
     templateDir = "";
     assetsDir = "";
     debug = false;
+    errPage = "";
 
     pages = [];
     tasks = [];
@@ -29,9 +33,92 @@ class pbj
             case "":
                 break;
             case "serve":
-                // TODO: Implement.
+                this._serve();
                 break;
         }
+    }
+
+    // i hate nodejs
+    _kill()
+    {
+        const stub = (() => this).bind(this);
+        this.setTemplateDir = stub;
+        this.setAssetsDir = stub;
+        this.set404Path = stub;
+        this.addPage = stub;
+        this.withData = stub;
+        this.addTask = stub;
+        this.build = stub;
+    }
+
+    async _serve()
+    {
+        this._kill();
+
+        let outDir = path.join(this.workingDir, this.outDir);
+        if (!fs.existsSync(outDir) || !fs.lstatSync(outDir).isDirectory())
+        {
+            throw new Error("Out dir does not exist");
+        }
+
+        let notFoundPath = null;
+        let notFoundFile = path.join(outDir, "404.md");
+        if (fs.existsSync(notFoundFile))
+        {
+            let content = await fs.promises.readFile(notFoundFile, { encoding: "utf8" });
+            let fm = frontMatter(content);
+            if (fm.attributes && fm.attributes.permalink)
+            {
+                notFoundPath = path.join(outDir, fm.attributes.permalink);
+                if (!fs.existsSync(notFoundPath))
+                {
+                    throw new Error("404 page does not exist.");
+                }
+            }
+        }
+
+        console.log("Serving at localhost:8000")
+
+        http.createServer(function(req, res)
+        {
+            let status = 200;
+
+            let uri = decodeURI(req.url);
+            if (uri.endsWith("/"))
+            {
+                uri += "index.html";
+            }
+
+            let filePath = path.join(outDir, uri);
+            if (!fs.existsSync(filePath))
+            {
+                let found = false;
+                if (!path.extname(filePath))
+                {
+                    filePath += ".html";
+                    if (fs.existsSync(filePath))
+                    {
+                        found = true;
+                    }
+                }
+                
+                if (!found)
+                {
+                    status = 404;
+                    filePath = notFoundPath;
+                }
+            }
+
+            let mimeType = "text/html";
+            if (filePath)
+            {
+                mimeType = mime.getType(filePath);
+            }
+
+            res.writeHead(status, { "Content-Type": mimeType });
+            let stream = fs.createReadStream(filePath);
+            stream.pipe(res);
+        }).listen(8000);
     }
 
     setTemplateDir(templateDir)
@@ -43,6 +130,12 @@ class pbj
     setAssetsDir(assetsDir)
     {
         this.assetsDir = assetsDir;
+        return this;
+    }
+
+    set404Path(errPage)
+    {
+        this.errPage = errPage;
         return this;
     }
 
@@ -103,6 +196,7 @@ class pbj
         }
 
         let promises = [];
+        let outDir = path.join(this.workingDir, this.outDir);
 
         if (this.assetsDir)
         {
@@ -113,12 +207,26 @@ class pbj
                 return;
             }
 
-            let assetsOutDir = path.join(this.outDir, this.assetsDir);
+            let assetsOutDir = path.join(outDir, this.assetsDir);
             await fs.promises.mkdir(assetsOutDir, { recursive: true });
             promises.push((async function()
             {
                 await fs.promises.cp(assetsDir, assetsOutDir, { recursive: true });
                 console.log("Assets copied");
+            })());
+        }
+
+        if (this.errPage)
+        {
+            let errPage = this.errPage;
+            promises.push((async function()
+            {
+                let outFile = path.join(outDir, "404.md");
+                await fs.promises.writeFile(outFile,
+                    "---\n" +
+                    "permalink: " + errPage + "\n" +
+                    "---"
+                );
             })());
         }
 
@@ -135,8 +243,6 @@ class pbj
                 console.log(`Task "${task.name}" completed`);
             })());
         });
-
-        console.log(promises);
 
         await Promise.all(promises);
         console.log("All done");

@@ -9,6 +9,8 @@
   "author": "aubymori",
   "license": "GPL-3.0",
   "dependencies": {
+    "front-matter": "^4.0.2",
+    "mime": "^4.1.0",
     "nunjucks": "^3.2.4"
   }
 }
