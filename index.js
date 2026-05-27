@@ -230,6 +230,13 @@ class pbj
             })());
         }
 
+        let faviconPath = path.join(this.workingDir, "favicon.ico");
+        if (fs.existsSync(faviconPath) && !fs.lstatSync(faviconPath).isDirectory())
+        {
+            let faviconOutPath = path.join(outDir, "favicon.ico");
+            promises.push(fs.promises.cp(faviconPath, faviconOutPath));
+        }
+
         this.pages.forEach(page =>
         {
             promises.push(this._buildPage(page));
