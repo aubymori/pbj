@@ -1,6 +1,6 @@
 {
   "name": "@aubymori/pbj",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "simple static site builder",
   "main": "index.js",
   "repository": {

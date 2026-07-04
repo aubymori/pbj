@@ -163,7 +163,8 @@ class pbj
 
     async _buildPage(page)
     {
-        if (!fs.existsSync(page.template + ".html"))
+        let templatePath = path.join(this.templateDir, page.template + ".html");
+        if (!fs.existsSync(templatePath))
         {
             throw new Error(`Template "${page.template}" does not exist`);
         }
@@ -173,7 +174,7 @@ class pbj
         let outDir = path.dirname(outPath);
         await fs.promises.mkdir(outDir, { recursive: true });
 
-        let rendered = nunjucks.render(templatePath, page.data);
+        let rendered = nunjucks.render(page.template + ".html", page.data);
         await fs.promises.writeFile(outPath, rendered);
         
         console.log(`Page "${page.dest}" built`);
