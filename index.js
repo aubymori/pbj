@@ -163,8 +163,7 @@ class pbj
 
     async _buildPage(page)
     {
-        let templatePath = path.join(this.templateDir, page.template + ".html");
-        if (!fs.existsSync(templatePath))
+        if (!fs.existsSync(page.template + ".html"))
         {
             throw new Error(`Template "${page.template}" does not exist`);
         }
@@ -194,6 +193,8 @@ class pbj
             console.log("Bad templates dir");
             return;
         }
+
+        nunjucks.configure(templateDir);
 
         let promises = [];
         let outDir = path.join(this.workingDir, this.outDir);
