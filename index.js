@@ -211,7 +211,7 @@ class pbj
         if (this.assetsDir)
         {
             let assetsDir = path.join(this.workingDir, this.assetsDir);
-            if (!fs.existsSync(templateDir) || !fs.lstatSync(templateDir).isDirectory())
+            if (!fs.existsSync(assetsDir) || !fs.lstatSync(assetsDir).isDirectory())
             {
                 console.log("Bad assets dir");
                 return;
