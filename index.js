@@ -126,14 +126,14 @@ class pbj
     {
         this.templateDir = templateDir;
 
-        let templateDir = path.join(this.workingDir, this.templateDir);
-        if (!fs.existsSync(templateDir) || !fs.lstatSync(templateDir).isDirectory())
+        let realDir = path.join(this.workingDir, this.templateDir);
+        if (!fs.existsSync(realDir) || !fs.lstatSync(realDir).isDirectory())
         {
             console.log("Bad templates dir");
             return null;
         }
 
-        this.env = nunjucks.configure(templateDir);
+        this.env = nunjucks.configure(realDir);
 
         return this;
     }
