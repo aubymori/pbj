@@ -17,15 +17,24 @@ class pbj
     pages = [];
     tasks = [];
 
-    constructor(workingDir, outDir = "out")
+    constructor(workingDir, templateDir, outDir = "out")
     {
         this.workingDir = workingDir;
+        this.templateDir = templateDir;
         this.outDir = "out";
         let mode = "";
         if (process.argv.length >= 3)
         {
             mode = process.argv[2].toLowerCase();
         }
+
+        let realTemplateDir = path.join(this.workingDir, this.templateDir);
+        if (!fs.existsSync(realTemplateDir) || !fs.lstatSync(realTemplateDir).isDirectory())
+        {
+            console.log("Bad templates dir");
+            return null;
+        }
+        this.env = nunjucks.configure(realTemplateDir, { autoescape: false });
 
         switch (mode)
         {
@@ -43,7 +52,6 @@ class pbj
     _kill()
     {
         const stub = (() => this).bind(this);
-        this.setTemplateDir = stub;
         this.setAssetsDir = stub;
         this.set404Path = stub;
         this.addPage = stub;
@@ -120,22 +128,6 @@ class pbj
             let stream = fs.createReadStream(filePath);
             stream.pipe(res);
         }).listen(8000);
-    }
-
-    setTemplateDir(templateDir)
-    {
-        this.templateDir = templateDir;
-
-        let realDir = path.join(this.workingDir, this.templateDir);
-        if (!fs.existsSync(realDir) || !fs.lstatSync(realDir).isDirectory())
-        {
-            console.log("Bad templates dir");
-            return null;
-        }
-
-        this.env = nunjucks.configure(realDir, { autoescape: false });
-
-        return this;
     }
 
     setAssetsDir(assetsDir)
