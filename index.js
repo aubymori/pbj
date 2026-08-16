@@ -161,6 +161,12 @@ class pbj
         return this;
     }
 
+    addExtension(ext, name)
+    {
+        nunjucks.addExtension(name, ext);
+        return this;
+    }
+
     async _buildPage(page)
     {
         let templatePath = path.join(this.templateDir, page.template + ".html");
