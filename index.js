@@ -12,6 +12,7 @@ class pbj
     assetsDir = "";
     debug = false;
     errPage = "";
+    env = null;
 
     pages = [];
     tasks = [];
@@ -124,6 +125,16 @@ class pbj
     setTemplateDir(templateDir)
     {
         this.templateDir = templateDir;
+
+        let templateDir = path.join(this.workingDir, this.templateDir);
+        if (!fs.existsSync(templateDir) || !fs.lstatSync(templateDir).isDirectory())
+        {
+            console.log("Bad templates dir");
+            return null;
+        }
+
+        this.env = nunjucks.configure(templateDir);
+
         return this;
     }
 
@@ -163,7 +174,7 @@ class pbj
 
     addExtension(ext, name)
     {
-        nunjucks.addExtension(name, ext);
+        this.env.addExtension(name, ext);
         return this;
     }
 
@@ -188,20 +199,11 @@ class pbj
 
     async build()
     {
-        if (!this.templateDir)
+        if (!this.env)
         {
             console.log("No templates dir");
             return;
         }
-
-        let templateDir = path.join(this.workingDir, this.templateDir);
-        if (!fs.existsSync(templateDir) || !fs.lstatSync(templateDir).isDirectory())
-        {
-            console.log("Bad templates dir");
-            return;
-        }
-
-        nunjucks.configure(templateDir);
 
         let promises = [];
         let outDir = path.join(this.workingDir, this.outDir);
