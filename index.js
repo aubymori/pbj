@@ -133,7 +133,7 @@ class pbj
             return null;
         }
 
-        this.env = nunjucks.configure(realDir);
+        this.env = nunjucks.configure(realDir, { autoescape: false });
 
         return this;
     }
